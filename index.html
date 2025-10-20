@@ -1,60 +1,116 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Upload CSV</title>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CSV Upload Portal</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 60px; max-width: 500px; }
-    h2 { color: #0072C6; }
-    input, button { font-size: 16px; margin-top: 10px; }
-    #status { margin-top: 20px; font-weight: bold; }
+    body {
+      font-family: "Segoe UI", Roboto, sans-serif;
+      background: #f8f9fb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .card {
+      background: #fff;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      border-radius: 16px;
+      padding: 40px;
+      width: 400px;
+      text-align: center;
+    }
+    h2 {
+      margin-bottom: 12px;
+      color: #0072c6;
+    }
+    p {
+      color: #555;
+      margin-bottom: 24px;
+    }
+    input[type="file"] {
+      display: block;
+      margin: 0 auto 20px;
+      font-size: 15px;
+    }
+    button {
+      background: #0072c6;
+      color: white;
+      border: none;
+      padding: 12px 28px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: #005fa3;
+    }
+    #status {
+      margin-top: 20px;
+      font-weight: 500;
+      color: #333;
+    }
+    .success { color: #2e8b57; }
+    .error { color: #c0392b; }
+    .loading { color: #555; }
   </style>
 </head>
 <body>
-  <h2>CSV Import</h2>
-  <p>Select a CSV file and click upload.</p>
+  <div class="card">
+    <h2>Upload Your CSV</h2>
+    <p>Select a CSV file to import your data.</p>
 
-  <form id="uploadForm">
-    <input type="file" id="file" name="file" accept=".csv" required><br><br>
-    <button type="submit">Upload</button>
-  </form>
+    <form id="uploadForm">
+      <input type="file" id="file" name="file" accept=".csv" required />
+      <button type="submit">Upload</button>
+    </form>
 
-  <div id="status"></div>
+    <div id="status"></div>
+  </div>
 
   <script>
-    const form = document.getElementById('uploadForm');
-    const status = document.getElementById('status');
+    const form = document.getElementById("uploadForm");
+    const status = document.getElementById("status");
     const testUrl = "https://arvinbal.app.n8n.cloud/webhook-test/4ce4dc49-bf0d-4d8d-8e88-d11090530477";
     const prodUrl = testUrl.replace("/webhook-test/", "/webhook/");
 
-    form.addEventListener('submit', async (e) => {
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const fileInput = document.getElementById('file');
-      if (!fileInput.files.length) {
+      const file = document.getElementById("file").files[0];
+      if (!file) {
         status.textContent = "Please select a CSV file.";
+        status.className = "error";
         return;
       }
 
       const formData = new FormData();
-      formData.append("file", fileInput.files[0]);
+      formData.append("file", file);
 
       status.textContent = "Uploading to test webhook...";
+      status.className = "loading";
+
       try {
-        let response = await fetch(testUrl, { method: "POST", body: formData });
-        if (!response.ok) throw new Error("Test webhook failed, trying production...");
+        const testRes = await fetch(testUrl, { method: "POST", body: formData });
+        if (!testRes.ok) throw new Error("Test webhook failed");
         status.textContent = "✅ Upload successful (test webhook)";
+        status.className = "success";
       } catch {
         status.textContent = "Retrying with production webhook...";
+        status.className = "loading";
         try {
-          let response2 = await fetch(prodUrl, { method: "POST", body: formData });
-          if (!response2.ok) throw new Error("Production webhook failed");
+          const prodRes = await fetch(prodUrl, { method: "POST", body: formData });
+          if (!prodRes.ok) throw new Error("Prod webhook failed");
           status.textContent = "✅ Upload successful (production webhook)";
+          status.className = "success";
         } catch {
           status.textContent = "❌ Upload failed. Please contact support.";
+          status.className = "error";
         }
       }
     });
   </script>
 </body>
 </html>
-
