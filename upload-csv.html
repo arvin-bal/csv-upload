@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Upload CSV</title>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: Arial, sans-serif; margin: 60px; max-width: 500px; }
+    h2 { color: #0072C6; }
+    input, button { font-size: 16px; margin-top: 10px; }
+    #status { margin-top: 20px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h2>CSV Import</h2>
+  <p>Select a CSV file and click upload.</p>
+
+  <form id="uploadForm">
+    <input type="file" id="file" name="file" accept=".csv" required><br><br>
+    <button type="submit">Upload</button>
+  </form>
+
+  <div id="status"></div>
+
+  <script>
+    const form = document.getElementById('uploadForm');
+    const status = document.getElementById('status');
+    const testUrl = "https://arvinbal.app.n8n.cloud/webhook-test/4ce4dc49-bf0d-4d8d-8e88-d11090530477";
+    const prodUrl = testUrl.replace("/webhook-test/", "/webhook/");
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fileInput = document.getElementById('file');
+      if (!fileInput.files.length) {
+        status.textContent = "Please select a CSV file.";
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("file", fileInput.files[0]);
+
+      status.textContent = "Uploading to test webhook...";
+      try {
+        let response = await fetch(testUrl, { method: "POST", body: formData });
+        if (!response.ok) throw new Error("Test webhook failed, trying production...");
+        status.textContent = "✅ Upload successful (test webhook)";
+      } catch {
+        status.textContent = "Retrying with production webhook...";
+        try {
+          let response2 = await fetch(prodUrl, { method: "POST", body: formData });
+          if (!response2.ok) throw new Error("Production webhook failed");
+          status.textContent = "✅ Upload successful (production webhook)";
+        } catch {
+          status.textContent = "❌ Upload failed. Please contact support.";
+        }
+      }
+    });
+  </script>
+</body>
+</html>
